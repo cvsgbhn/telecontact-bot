@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-	"strconv"
 	"encoding/json"
-	"time"
+	"fmt"
 	"github.com/sirupsen/logrus"
-	"os"
+	"net/http"
 	"net/url"
+	"os"
+	"strconv"
+	"time"
 )
 
 /* send logs to bot */
@@ -21,16 +21,15 @@ func TelegramLogs(numa []string, numb []string, callSessionId []string, startTim
 	} else {
 		allLogs = " numa: " + numa[0] + "\nnumb: " + numb[0] + "\ncall_session_id: " + callSessionId[0] + "\nstart_time: " + startTime + "\nreturned_code: " + answer
 	}
-	
 
 	Url, err := url.Parse("https://api.telegram.org")
-    if err != nil {
+	if err != nil {
 		logrus.Fatal("TelegramLogs: ", err)
-        panic(err)
-    }
+		panic(err)
+	}
 
-    Url.Path += "/bot" + token + "/sendMessage"
-    parameters := url.Values{}
+	Url.Path += "/bot" + token + "/sendMessage"
+	parameters := url.Values{}
 	parameters.Add("chat_id", chatId)
 	parameters.Add("text", allLogs)
 	Url.RawQuery = parameters.Encode()
@@ -39,7 +38,7 @@ func TelegramLogs(numa []string, numb []string, callSessionId []string, startTim
 	if err != nil {
 		logrus.Fatal("TelegramLogs: ", err)
 	}
-	
+
 	req.Header.Set("Accept", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -62,10 +61,10 @@ func getPhoneCall(w http.ResponseWriter, r *http.Request) {
 	startTime, ok := r.URL.Query()["start_time"]
 
 	answer := Answer{}
-	
+
 	/* check if time exists */
-    if !ok || len(startTime[0]) < 0 {
-		answer = Answer{ ReturnedCode: 1 }
+	if !ok || len(startTime[0]) < 0 {
+		answer = Answer{ReturnedCode: 1}
 		jsonBytes, err := json.Marshal(answer)
 		if err != nil {
 			logrus.Fatal("ListenAndServe: ", err)
@@ -76,13 +75,13 @@ func getPhoneCall(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(jsonBytes)
-        return
+		return
 	}
 
 	/* parse time from unix to utc */
 	parsedTime, err := strconv.ParseInt(startTime[0], 10, 64)
-    if err != nil {
-		answer = Answer{ ReturnedCode: 1 }
+	if err != nil {
+		answer = Answer{ReturnedCode: 1}
 		TelegramLogs(numa, numb, callSessionId, strconv.Itoa(int(parsedTime)), strconv.Itoa(answer.ReturnedCode), err.Error())
 		jsonBytes, err := json.Marshal(answer)
 		if err != nil {
@@ -90,33 +89,33 @@ func getPhoneCall(w http.ResponseWriter, r *http.Request) {
 			TelegramLogs(numa, numb, callSessionId, strconv.Itoa(int(parsedTime)), strconv.Itoa(answer.ReturnedCode), err.Error())
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write(jsonBytes)
-        	return
+			return
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(jsonBytes)
-        panic(err)
+		panic(err)
 	}
 	tm := time.Unix(parsedTime, 0)
-	
+
 	/* check time interval (hours) */
 	if tm.Hour()+3 >= 10 && tm.Hour()+3 < 22 {
-		answer = Answer{ ReturnedCode: 1 }
+		answer = Answer{ReturnedCode: 1}
 	} else {
-		answer = Answer{ ReturnedCode: 0 }
+		answer = Answer{ReturnedCode: 0}
 	}
 	jsonBytes, err := json.Marshal(answer)
-	
+
 	/* send logs */
 	TelegramLogs(numa, numb, callSessionId, tm.String(), strconv.Itoa(answer.ReturnedCode), "")
 	logrus.WithFields(logrus.Fields{
-		"project" : "detect time interval",
-		"package" : "main",
-		"function": "detect-moscow-time.getPhoneCall",
-		"numa" : numa,
-		"numb" : numb,
-		"call_session_id" : callSessionId,
-		"start_time" : startTime,
-		"answer" : answer,
+		"project":         "detect time interval",
+		"package":         "main",
+		"function":        "detect-moscow-time.getPhoneCall",
+		"numa":            numa,
+		"numb":            numb,
+		"call_session_id": callSessionId,
+		"start_time":      startTime,
+		"answer":          answer,
 	})
 
 	/* return response */
